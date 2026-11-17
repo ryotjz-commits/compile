@@ -1,1 +1,206 @@
+# ============================================================
+# NOVIA HOME V4.0 - ESPHome YAML
+# Dikonversi dari sketch Arduino (NOVIA HOME V4.0)
+# ============================================================
+# BOARD       : ESP32 DEVKIT V1
+# CONTROLLER  : Home Assistant (menggantikan Blynk IoT)
+# WEB SERVER  : ESPHome Web Server (port 80)
+# WIFI        : AP + STA + Fallback Hotspot
+# RELAY       : ACTIVE HIGH
+#
+# CATATAN PENTING:
+# - Blynk (V0-V3) TIDAK ada di ESPHome. Diganti API native
+#   Home Assistant, jadi kontrolnya dari HA / dashboard web ESPHome.
+# - Pin relay mengikuti KODE (26, 27, 13, 14),
+#   bukan header komentar (yang menulis CH3 = GPIO12).
+# - Semua relay OFF setelah restart (restore_mode: ALWAYS_OFF).
+# ============================================================
 
+esphome:
+  name: novia-home
+  friendly_name: Novia Home
+  comment: Novia Home V4.0 - Premium Smart Home System
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# ============================================================
+# LOGGING + API + OTA + WEB SERVER
+# ============================================================
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: "uUhUdnlB22cqJfKinHQu8yGMXLRbgzf1"
+
+ota:
+  - platform: esphome
+    password: "Noke0710"
+
+web_server:
+  port: 80
+  version: 3
+  auth:
+    username: admin
+    password: "admin123"
+
+# ============================================================
+# WIFI: STA + AP FALLBACK (pengganti AP + STA di Arduino)
+# ============================================================
+# Ganti ssid/password di bawah dengan WiFi rumah kamu.
+# Kalau WiFi rumah tidak ketemu, ESP32 akan buka AP "NOVIA-HOME".
+
+wifi:
+  ssid: "Tenda"
+  password: "Noke0710"
+  fast_connect: true
+  reboot_timeout: 15min
+
+  ap:
+    ssid: "NOVIA-HOME"
+    password: "Noke0710"
+
+captive_portal:
+
+# ============================================================
+# STATUS LED (opsional, pakai LED bawaan ESP32 DevKit V1)
+# ============================================================
+
+status_led:
+  pin: GPIO2
+
+# ============================================================
+# 4 CHANNEL RELAY - ACTIVE HIGH
+# CH1 = GPIO26 | CH2 = GPIO27 | CH3 = GPIO13 | CH4 = GPIO14
+# ============================================================
+
+switch:
+  - platform: gpio
+    name: "Lampu Depan"
+    id: ch1_lampu_depan
+    pin: GPIO26
+    inverted: false
+    restore_mode: ALWAYS_OFF
+    icon: "mdi:lightbulb"
+
+  - platform: gpio
+    name: "Lampu Tengah"
+    id: ch2_lampu_tengah
+    pin: GPIO27
+    inverted: false
+    restore_mode: ALWAYS_OFF
+    icon: "mdi:lightbulb"
+
+  - platform: gpio
+    name: "Lampu Kamar"
+    id: ch3_lampu_kamar
+    pin: GPIO13
+    inverted: false
+    restore_mode: ALWAYS_OFF
+    icon: "mdi:lightbulb"
+
+  - platform: gpio
+    name: "Kipas Angin"
+    id: ch4_kipas_angin
+    pin: GPIO14
+    inverted: false
+    restore_mode: ALWAYS_OFF
+    icon: "mdi:fan"
+
+# ============================================================
+# 4 PHYSICAL TOGGLE BUTTONS - INPUT_PULLUP + DEBOUNCE 50ms
+# CH1 = GPIO32 | CH2 = GPIO33 | CH3 = GPIO25 | CH4 = GPIO23
+# Tekan = toggle relay yang sama (seperti handleButtons di .ino)
+# ============================================================
+
+binary_sensor:
+  - platform: gpio
+    name: "Tombol Lampu Depan"
+    id: btn_ch1
+    pin:
+      number: GPIO32
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 50ms
+    on_press:
+      then:
+        - switch.toggle: ch1_lampu_depan
+
+  - platform: gpio
+    name: "Tombol Lampu Tengah"
+    id: btn_ch2
+    pin:
+      number: GPIO33
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 50ms
+    on_press:
+      then:
+        - switch.toggle: ch2_lampu_tengah
+
+  - platform: gpio
+    name: "Tombol Lampu Kamar"
+    id: btn_ch3
+    pin:
+      number: GPIO25
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 50ms
+    on_press:
+      then:
+        - switch.toggle: ch3_lampu_kamar
+
+  - platform: gpio
+    name: "Tombol Kipas Angin"
+    id: btn_ch4
+    pin:
+      number: GPIO23
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 50ms
+    on_press:
+      then:
+        - switch.toggle: ch4_kipas_angin
+
+# ============================================================
+# SENSOR TAMBAHAN (pengganti "Real-time Device Status" di .ino)
+# ============================================================
+
+sensor:
+  - platform: wifi_signal
+    name: "Novia Home Sinyal WiFi"
+    update_interval: 30s
+    icon: "mdi:wifi"
+
+  - platform: uptime
+    name: "Novia Home Uptime"
+    update_interval: 60s
+    icon: "mdi:timer-outline"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Novia Home IP Address"
+      icon: "mdi:ip-network"
+    ssid:
+      name: "Novia Home WiFi SSID"
+      icon: "mdi:wifi"
+    mac_address:
+      name: "Novia Home MAC Address"
+      icon: "mdi:network"
+
+# ============================================================
+# END NOVIA HOME V4.0 - ESPHome
+# ============================================================
